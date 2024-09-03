@@ -1,55 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const UserPosts: React.FC = () => {
-  const [userId, setUserId] = useState<number | ''>('');
-  const [posts, setPosts] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+type User = {
+  id: number;
+  name: string;
+};
 
-  const fetchPosts = async () => {
-    if (userId === '') return; // Do nothing if userId is empty
+type Post = {
+  userId: number;
+};
 
-    setLoading(true);
-    setError(null);
+const UserList: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    try {
-      const response = await fetch(`https://jsonplaceholder.typicode.com/posts?userId=${userId}`);
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+  useEffect(() => {
+    // Fetch users and posts
+    const fetchUsersAndPosts = async () => {
+      try {
+        const [usersResponse, postsResponse] = await Promise.all([
+          fetch('https://jsonplaceholder.typicode.com/users'),
+          fetch('https://jsonplaceholder.typicode.com/posts'),
+        ]);
+
+        const usersData = await usersResponse.json();
+        const postsData = await postsResponse.json();
+
+        setUsers(usersData);
+        setPosts(postsData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setLoading(false);
       }
-      const data = await response.json();
-      setPosts(data);
-    } catch (error) {
-      setError('Failed to fetch posts');
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    fetchUsersAndPosts();
+  }, []);
+
+  // Function to count posts by user ID
+  const getPostCount = (userId: number) => {
+    return posts.filter(post => post.userId === userId).length;
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>
-      <input
-        type="number"
-        placeholder="Enter user ID"
-        value={userId}
-        onChange={(e) => setUserId(Number(e.target.value))}
-      />
-      <button onClick={fetchPosts}>Fetch Posts</button>
-
-      {loading && <p>Loading...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {posts.length > 0 && (
-        <ul>
-          {posts.map((post) => (
-            <li key={post.id}>
-              <h4>{post.title}</h4>
-              <p>{post.body}</p>
-            </li>
-          ))}
-        </ul>
-      )}
+      <h2>User List</h2>
+      <ul>
+        {users.map(user => (
+          <li key={user.id}>
+            {user.name} - Posts: {getPostCount(user.id)}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
 
-export default UserPosts;
+export default UserList;
