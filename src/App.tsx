@@ -1,5 +1,5 @@
 import React from 'react';
-import UserList from './components/UserList';
+import UserList from './components/UserList.tsx';
 import { Container, Typography } from '@mui/material';
 
 const App: React.FC = () => {
